@@ -3,15 +3,38 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+import csv
 from scipy.optimize import curve_fit
 
 #data points
-xdata = np.array([0, 4.18879, 2.635447, 0.261799, 5.393067, 1.466077, 3.804818])
-ydata = np.array([148, 320, 85, 215, 109, 270, 300])
+x = []
+y = []
+xdata = np.array([])
+ydata = np.array([52, 650, 21, 181, 219, 720, 425, 585])
+
+# convert to radians
+
+def deg2rad(deg):
+    return deg*np.pi/180
+
+# reading csv file
+with open('data.csv', newline='') as csvfile:
+    reader = csv.DictReader(csvfile)
+    for row in reader:
+        if (row['Angle'] != '' and row['Power'] != ''):
+            x.append(deg2rad(float(row['Angle'])))
+            y.append(float(row['Power']))
+        #x.append(float(row['Angle']))
+        #y.append(float(row['Power']))
+
+# numpy-ify the x and y data
+xdata = np.array(x)
+ydata = np.array(y)
 
 #order the data points based on y value
 ydata = ydata[np.argsort(xdata)]
 xdata = np.sort(xdata)
+
 
 
 #function to fit
@@ -34,5 +57,3 @@ plt.plot(xdata, ydata, 'o', label='data')
 plt.plot(np.linspace(0, 6, 100), cos2(np.linspace(0, 6, 100), *popt), label='fit')
 plt.legend()
 plt.show()
-
-
