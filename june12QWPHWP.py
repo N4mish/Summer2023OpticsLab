@@ -25,12 +25,10 @@ col3 = 'Horizontal Power'
 # reading csv file
 with open('Data\June12\P-HWP-QWP - Sheet1.csv', newline='') as csvfile:
     reader = csv.DictReader(csvfile)
-    xmap[1234] = []
-    zmap[1234] = []
     for row in reader:
         if (row[col1] != '' and row[col2] != '' and row[col3] != ''):
-            x.append(deg2rad(float(row[col1])))
-            y.append(deg2rad(float(row[col2])))
+            x.append((float(row[col1])))
+            y.append((float(row[col2])))
             y2.append(float(row[col3]))
             if (not (float(row[col1])) in xmap):
                 xmap[float(row[col1])] = []
@@ -38,9 +36,6 @@ with open('Data\June12\P-HWP-QWP - Sheet1.csv', newline='') as csvfile:
             if not float(row[col1]) in zmap:
                 zmap[float(row[col1])] = []
             zmap[float(row[col1])].append((float(row[col3])))
-            if (row["Horizontal Power 785"] != ''):
-                xmap[1234].append(float(row[col2]))
-                zmap[1234].append(float(row["Horizontal Power 785"]))
 
 
 # numpy-ify the x and y data
@@ -50,9 +45,9 @@ y2data = np.array(y2)
 
 #function to fit
 def HWPQWPPower(data, A, B, C, D):
-    phi = data[0]
-    theta = data[1]
-    return A*np.cos(phi + D)**2*np.cos(theta + B)**4 + A*np.cos(phi + D)**2*np.sin(theta + B)**4 + C
+    phi = deg2rad(data[0])
+    theta = deg2rad(data[1])
+    return A * (np.cos(2*phi + D) ** 2) * (np.cos(theta + B) ** 4) + A * (np.cos(2*phi + D) ** 2) * (np.sin(theta + B) ** 4) + C
 
 #fit the data
 popt, pcov = curve_fit(HWPQWPPower, ydata, y2data)
@@ -76,11 +71,10 @@ colors[180] = 'magenta'
 
 # scatterplotting the points
 for key in xmap:
-    if key != 1234:
-        ax.scatter(xmap[key], key, zmap[key], color=colors[key])
+    ax.scatter(xmap[key], key, zmap[key], color=colors[key])
 
-ax.set_xlabel('HWP Angle')
-ax.set_ylabel('QWP Angle')
+ax.set_xlabel('QWP Angle')
+ax.set_ylabel('HWP Angle')
 ax.set_zlabel('Power (microwatts)')
 
 
@@ -92,15 +86,11 @@ model_y_data = np.linspace(min(ydata), max(ydata), 30)
 X, Y = np.meshgrid(model_x_data, model_y_data)
 # calculate Z coordinate array
 Z = HWPQWPPower(np.array([X, Y]), *popt)
+print(X)
 
-# ax.plot_surface(X, Y, Z, alpha=0.5)
+ax.plot_surface(X, Y, Z, alpha=0.5)
 
 print(f"A = {popt[0]}, B = {popt[1]}, C = {popt[2]}")
 
-
-plt.figure(2)
-plt.plot(xmap[1234], zmap[1234], 'o', label='785nm')
-plt.plot(xmap[0], zmap[0], 'o', label="400nm")
-plt.legend()
 
 plt.show() 
