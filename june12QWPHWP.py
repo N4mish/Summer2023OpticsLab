@@ -11,7 +11,7 @@ x = []
 y = []
 y2 = []
 
-xmap = {}
+ymap = {}
 zmap = {}
 # convert to radians
 
@@ -30,9 +30,9 @@ with open('Data\June12\P-HWP-QWP - Sheet1.csv', newline='') as csvfile:
             x.append((float(row[col1])))
             y.append((float(row[col2])))
             y2.append(float(row[col3]))
-            if (not (float(row[col1])) in xmap):
-                xmap[float(row[col1])] = []
-            xmap[float(row[col1])].append((float(row[col2])))
+            if (not (float(row[col1])) in ymap):
+                ymap[float(row[col1])] = []
+            ymap[float(row[col1])].append((float(row[col2])))
             if not float(row[col1]) in zmap:
                 zmap[float(row[col1])] = []
             zmap[float(row[col1])].append((float(row[col3])))
@@ -43,14 +43,25 @@ xdata = np.array(x)
 ydata = np.array(y)
 y2data = np.array(y2)
 
-#function to fit
-def HWPQWPPower(data, A, B, C, D):
-    phi = deg2rad(data[0])
-    theta = deg2rad(data[1])
-    return A * (np.cos(2*phi + D) ** 2) * (np.cos(theta + B) ** 4) + A * (np.cos(2*phi + D) ** 2) * (np.sin(theta + B) ** 4) + C
+def hwp(theta):
+    theta = deg2rad(theta)
+    return np.matrix([[np.cos(2 * theta),     np.sin(2 * theta)], 
+                     [np.sin(2 * theta),     -1*np.cos(2 * theta)]])
 
+
+def qwp(theta):
+    theta = deg2rad(theta)
+    return np.matrix([[(np.cos(theta) ** 2) + 1j * np.sin(theta) ** 2,    (1 - 1j) * np.sin(theta) * np.cos(theta)],
+                     [(1 - 1j) * np.sin(theta) * np.cos(theta),         np.sin(theta) ** 2 + 1j * np.cos(theta) ** 2]])
+
+#function to fit
+def HWPQWPPower(data, A, C):
+    x = deg2rad(data[0])
+    y = deg2rad(data[1])
+    return A * (1 / 4) * (np.cos(4 * x - 4 * y) + np.cos(4 * x) + 2) + C
 #fit the data
-popt, pcov = curve_fit(HWPQWPPower, ydata, y2data)
+popt, pcov = curve_fit(HWPQWPPower, [xdata, ydata], y2data)
+
 
 #plot the data and the fit
 fig = plt.figure(1)
@@ -70,27 +81,29 @@ colors[157.5] = 'cyan'
 colors[180] = 'magenta'
 
 # scatterplotting the points
-for key in xmap:
-    ax.scatter(xmap[key], key, zmap[key], color=colors[key])
+for key in ymap:
+    ax.scatter(key, ymap[key], zmap[key], color=colors[key])
 
-ax.set_xlabel('QWP Angle')
-ax.set_ylabel('HWP Angle')
+ax.set_xlabel('HWP Angle')
+ax.set_ylabel('QWP Angle')
 ax.set_zlabel('Power (microwatts)')
 
 
 # create surface function model
 # setup data points for calculating surface model
+print(f"x min: {max(xdata)}, y min: {max(ydata)}")
 model_x_data = np.linspace(min(xdata), max(xdata), 30)
 model_y_data = np.linspace(min(ydata), max(ydata), 30)
 # create coordinate arrays for vectorized evaluations
 X, Y = np.meshgrid(model_x_data, model_y_data)
 # calculate Z coordinate array
+
+print(f"A = {popt[0]}, C = {popt[1]}")
 Z = HWPQWPPower(np.array([X, Y]), *popt)
-print(X)
+
 
 ax.plot_surface(X, Y, Z, alpha=0.5)
 
-print(f"A = {popt[0]}, B = {popt[1]}, C = {popt[2]}")
 
 
 plt.show() 
