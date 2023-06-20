@@ -11,7 +11,7 @@ z = [] # col 3 data
 ymap = {} # col 2 mapped with x as key
 zmap = {} # col 3 mapped with x as key
 
-file = 'Data\June 20\HWPPhotonsTrial2.csv' # input
+file = 'Data\June 20\Detector_1_2.csv' # input
 
 def deg2rad(deg):
     return deg*np.pi/180
