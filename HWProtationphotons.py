@@ -11,15 +11,15 @@ z = [] # col 3 data
 ymap = {} # col 2 mapped with x as key
 zmap = {} # col 3 mapped with x as key
 
-file = 'Data\June 16\photoncounts.csv'
+file = 'Data\June 20\HWPPhotonsTrial2.csv' # input
 
 def deg2rad(deg):
     return deg*np.pi/180
 
-
-col1 = 'HWP Angle'
-col2 = 'Horizontal'
-col3 = 'Vertical'
+# label with csv columns
+col1 = 'Angle'
+col2 = 'Detector 1'
+col3 = 'Detector 2'
 
 # reading csv file
 with open(file, newline='') as csvfile:
@@ -31,16 +31,17 @@ with open(file, newline='') as csvfile:
             z.append(float(row[col3]))
             if (not (float(row[col1])) in ymap):
                 ymap[float(row[col1])] = []
-            ymap[float(row[col1])].append((float(row[col2])))
+            ymap[float(row[col1])].append((float(row[col1])))
             if not float(row[col1]) in zmap:
                 zmap[float(row[col1])] = []
-            zmap[float(row[col1])].append((float(row[col3])))
+            zmap[float(row[col1])].append((float(row[col2])))
 
 # numpy-ify the data
 xdata = np.array(x)
 ydata = np.array(y)
 zdata = np.array(z)
 
+# set figure and axis
 fig = plt.figure(1)
 ax = fig.add_subplot()
 
@@ -48,10 +49,10 @@ ax = fig.add_subplot()
 def sin(x, A, B, C):
     x = deg2rad(x)
     return A*np.sin(2*x + B) ** 2 + C
-# scatterplotting the points
-ax.scatter(xdata, ydata, label = 'Horizontal', color = 'red')
 
-ax.scatter(xdata, zdata, label = 'Vertical', color = 'blue')
+# scatterplotting the points
+ax.scatter(xdata, ydata, label = col2, color = 'red')
+ax.scatter(xdata, zdata, label = col3, color = 'blue')
 
 # curve fitting
 horiz_popt, horiz_pcov = curve_fit(sin, x, y)
@@ -62,11 +63,12 @@ print(sin(0, *horiz_popt))
 ax.set_xlabel('HWP Angle')
 ax.set_ylabel('Counts')
 
-plt.plot(np.linspace(0, 180, 360), sin(np.linspace(0, 180, 360), *horiz_popt), label='Horizontal fit', color = 'red', alpha = 0.5)
-plt.plot(np.linspace(0, 180, 360), sin(np.linspace(0, 180, 360), *vert_popt), label='Vertical fit', color = 'blue', alpha = 0.5)
+# this creates the line. linspace is fixed amount of points between the two values.
+plt.plot(np.linspace(0, 180, 360), sin(np.linspace(0, 180, 360), *horiz_popt), label=f'{col2} fit', color = 'red', alpha = 0.5)
+plt.plot(np.linspace(0, 180, 360), sin(np.linspace(0, 180, 360), *vert_popt), label=f'{col3} fit', color = 'blue', alpha = 0.5)
 
-print(f"Horizontal: A = {horiz_popt[0]}, B = {horiz_popt[1]}, C = {horiz_popt[2]}")
-print(f"Vertical: A = {vert_popt[0]}, B = {vert_popt[1]}, C = {vert_popt[2]}")
+print(f"{col2}: A = {horiz_popt[0]}, B = {horiz_popt[1]}, C = {horiz_popt[2]}")
+print(f"{col3}: A = {vert_popt[0]}, B = {vert_popt[1]}, C = {vert_popt[2]}")
 
 plt.legend()
 plt.show()
