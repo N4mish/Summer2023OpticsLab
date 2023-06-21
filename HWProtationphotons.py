@@ -9,17 +9,17 @@ z = [] # col 3 data
 
 # the following make scattering the data a little nicer.
 ymap = {} # col 2 mapped with x as key
-zmap = {} # col 3 mapped with x as key
+zmap = {} # col 3 mapped with x as key 
 
-file = 'Data\June 20\Detector_1_2.csv' # input
+file = 'Data\June 20-21\Detector_2_4.csv' # input
 
 def deg2rad(deg):
     return deg*np.pi/180
 
 # label with csv columns
 col1 = 'Angle'
-col2 = 'Detector 1'
-col3 = 'Detector 2'
+col2 = 'Detector 2'
+col3 = 'Detector 4'
 
 # reading csv file
 with open(file, newline='') as csvfile:

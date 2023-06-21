@@ -14,6 +14,7 @@ import usbcount_class as UC
 import numpy as np
 from tkinter import *
 from tkinter import ttk
+from tkinter import filedialog
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
@@ -22,22 +23,28 @@ import time
 import serial.tools.list_ports
 import csv
 
+
 # sets the size of the font for the counters
 ft_size = 42
 # sets the trigger type of input signal, PLEASE CHECK THIS. 'nim' or 'ttl'
 signal_type='nim'
 
+# variables to change. cols are CSV headers, file is output file name
 col1 = "Angle"
-col2 = "Detector 1"
-col3 = "Detector 3"
-file = "exporteddata.csv"
-snap = 0
+col2 = "Detector 2"
+col3 = "Detector 4"
 samples = 6
 
+
+snap = 0 # DO NOT CHANGE
+lockedAngle = 0
+
+# hold the values to be used by export
 list1 = []
 list2 = []
 list3 = []
 
+# maps detectors to variables
 def getDetector(x):
     if x == "Detector 1":
         return counter_00.get()
@@ -48,7 +55,9 @@ def getDetector(x):
     elif x == "Detector 4":
         return counter_03.get()
     
+    # should never happen with proper use
     return -1
+
 
 # Stop querying the timestamp function, close device and initiate selected device in pairs mode.
 def InitDevice(*args):
@@ -91,9 +100,10 @@ def start_f(*args):
         counter_102.set('{:6.1f}'.format(counter_value[6]))
         counter_103.set('{:6.1f}'.format(counter_value[7]))
         print(snap)
+        # updates the snapshot counter. > 0 if sampling.
         snap_text.set(snap)
         if snap > 0:
-            list1.append(angle.get())
+            list1.append(lockedAngle)
             list2.append(getDetector(col2))
             list3.append(getDetector(col3))
             snap -= 1
@@ -112,13 +122,18 @@ def stop_f(*args):
     loop_flag.set(False)
 
 
+# initiates a snapshot of the data by setting the counter to the num of samples.
 def snapshot(*args):
-    global snap
+    global snap, lockedAngle
     if snap > 0: return
+    lockedAngle = angle.get()
     snap = samples
+    # qol - update display immediately
+    snap_text.set(snap)
+    root.update()
     
 def export(*args):
-    with open(file, 'w', newline='') as f:
+    with open(filedialog.asksaveasfilename(defaultextension='csv'), mode='w', newline='') as f:
         writer = csv.writer(f)
         writer.writerow([col1, col2, col3])
         counter = samples
@@ -240,6 +255,8 @@ counter_102 = StringVar()
 counter_102.set(format(0))
 counter_103 = StringVar()
 counter_103.set(format(0))
+
+print(f"Using {col2} and {col3}")
 
 snap_text = StringVar()
 snap_text.set(format(0))
