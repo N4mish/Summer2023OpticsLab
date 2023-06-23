@@ -16,7 +16,7 @@ def deg2rad(deg):
     return deg*np.pi/180
 
 # reading csv file
-with open('Data\Jun7PolariationFit.csv', newline='') as csvfile:
+with open('Data\June 21\AutoHWPPower.csv', newline='') as csvfile:
     reader = csv.DictReader(csvfile)
     for row in reader:
         if (row['Angle'] != '' and row['Power'] != ''):
@@ -31,7 +31,7 @@ ydata = np.array(y)
 
 #function to fit
 def cos2(x, A, B, C):
-    return A*np.cos(x+B)**2 + C
+    return A*np.cos(2*x+B)**2 + C
 
 #fit the data
 popt, pcov = curve_fit(cos2, xdata, ydata)
@@ -47,7 +47,7 @@ print(f"Power Transmitted: A = {popt[0]}, B = {popt[1]}, C = {popt[2]}")
 plt.figure(2)
 plt.plot(xdata, ydata, 'o', label='Power Transmitted')
 #plot the equation of the fit over a range of x values
-plt.plot(np.linspace(0, 6, 100), cos2(np.linspace(0, 6, 100), *popt), label='Transmitted fit', color = 'orange', alpha = 0.5)
+plt.plot(np.linspace(0, 3, 100), cos2(np.linspace(0, 3, 100), *popt), label='Transmitted fit', color = 'orange', alpha = 0.5)
 
 plt.legend()
 plt.show()

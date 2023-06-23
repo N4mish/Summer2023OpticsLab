@@ -11,10 +11,14 @@ z = [] # col 3 data
 ymap = {} # col 2 mapped with x as key
 zmap = {} # col 3 mapped with x as key 
 
-file = 'Data\June 20-21\Detector_4_3.csv' # input
+file = 'Data\June 23\\HWP_0.csv' # input
 
 def deg2rad(deg):
     return deg*np.pi/180
+
+# variables to change
+startdegree = 0
+degreesrotated = 180
 
 # label with csv columns
 col1 = 'Angle'
@@ -64,12 +68,12 @@ ax.set_xlabel('HWP Angle')
 ax.set_ylabel('Counts')
 
 # this creates the line. linspace is fixed amount of points between the two values.
-# plt.plot(np.linspace(0, 180, 360), sin(np.linspace(0, 180, 360), *horiz_popt), label=f'{col2} fit', color = 'red', alpha = 0.5)
-plt.plot(np.linspace(0, 180, 360), sin(np.linspace(0, 180, 360), *vert_popt), label=f'{col3} fit', color = 'blue', alpha = 0.5)
+plt.plot(np.linspace(startdegree, degreesrotated, 360), sin(np.linspace(startdegree, degreesrotated, 360), *horiz_popt), label=f'{col2} fit', color = 'red', alpha = 0.5)
+plt.plot(np.linspace(startdegree, degreesrotated, 360), sin(np.linspace(startdegree, degreesrotated, 360), *vert_popt), label=f'{col3} fit', color = 'blue', alpha = 0.5)
 scale = vert_popt[0] / horiz_popt[0]
 print(scale)
 scaled_popt = np.array([scale*horiz_popt[0], horiz_popt[1], horiz_popt[2]])
-plt.plot(np.linspace(0, 180, 360), sin(np.linspace(0, 180, 360), *scaled_popt), label=f'scaled {col2} fit', color='orange', alpha=0.5)
+plt.plot(np.linspace(startdegree, degreesrotated, 360), sin(np.linspace(startdegree, degreesrotated, 360), *scaled_popt), label=f'scaled {col2} fit', color='orange', alpha=0.5)
 
 scaleddata = []
 

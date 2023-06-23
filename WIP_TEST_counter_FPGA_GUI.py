@@ -22,30 +22,46 @@ import matplotlib.animation as animation
 import time
 import serial.tools.list_ports
 import csv
+from pylablib.devices import Thorlabs
 
-
+# variables to change. 
 # sets the size of the font for the counters
 ft_size = 42
 # sets the trigger type of input signal, PLEASE CHECK THIS. 'nim' or 'ttl'
 signal_type='nim'
 
-# variables to change. cols are CSV headers, file is output file name
+# cols are CSV headers
 col1 = "Angle"
-col2 = "Detector 2"
-col3 = "Detector 4"
-samples = 6
+col2 = "Detector 4"
+col3 = "Detector 3"
 
+listOfAngles = [0, 10, 20, 22.5, 30, 40, 45, 50, 60, 67.5, 70, 80, 90, 100, 110, 112.5, 120, 130, 135, 140, 150, 157.5, 160, 170, 180]
 
-snap = 0 # DO NOT CHANGE
+# measurement related variables
+samples = 6 # number of samples per snapshot
+increment = 10 # the angle increment to move every time
+kinesis_serial_num = "55000784" # serial number of the motorized optic
+start_angle = -1 # starts at negative because the measuring process moves and then measures
+measurements = len(listOfAngles) # number of total snapshots to take
+
+# variables to be used and changed by the program
+snapshot_counter = 0 # DO NOT CHANGE
 lockedAngle = 0
+measure_counter = 0
+
 
 # hold the values to be used by export
 list1 = []
 list2 = []
 list3 = []
 
-# maps detectors to variables
+
+print(len(listOfAngles))
+
 def getDetector(x):
+    """
+    Maps detectors to variables.
+    """
     if x == "Detector 1":
         return counter_00.get()
     elif x == "Detector 2":
@@ -83,7 +99,7 @@ def change_counter_f(*args):
 
 # Function to start the counter.
 def start_f(*args):
-    global snap
+    global snapshot_counter, measure_counter, start_angle
     loop_flag.set(True)
     counter_100.set(0)
     counter_101.set(0)
@@ -99,14 +115,29 @@ def start_f(*args):
         counter_101.set('{:6.1f}'.format(counter_value[5]))
         counter_102.set('{:6.1f}'.format(counter_value[6]))
         counter_103.set('{:6.1f}'.format(counter_value[7]))
-        print(snap)
+        print(snapshot_counter)
         # updates the snapshot counter. > 0 if sampling.
-        snap_text.set(snap)
-        if snap > 0:
+        snap_text.set(snapshot_counter)
+        if snapshot_counter > 0:
             list1.append(lockedAngle)
             list2.append(getDetector(col2))
             list3.append(getDetector(col3))
-            snap -= 1
+            snapshot_counter -= 1
+        else:
+            if measure_counter > 0:
+                with Thorlabs.KinesisMotor(kinesis_serial_num, is_rack_system=True, scale="K10CR1") as stage:
+                    start_angle += 1
+                    # angle.set(int(angle.get()) + increment)
+                    # stage.move_by(increment)
+                    angle.set(listOfAngles[start_angle])
+                    stage.move_to(listOfAngles[start_angle])
+                    stage.wait_move()
+                    print(stage.get_position())
+                snapshot()
+                measure_counter -= 1
+            else:
+                start_angle = -1
+
         root.update()
 
 # Stop querying the counter function, resets counter display in GUI.
@@ -122,17 +153,24 @@ def stop_f(*args):
     loop_flag.set(False)
 
 
-# initiates a snapshot of the data by setting the counter to the num of samples.
 def snapshot(*args):
-    global snap, lockedAngle
-    if snap > 0: return
+    """
+    Initiates a snapshot of the data by setting the counter to the num of samples.
+    """
+    global snapshot_counter, lockedAngle
+    if snapshot_counter > 0: return
     lockedAngle = angle.get()
-    snap = samples
+    snapshot_counter = samples
     # qol - update display immediately
-    snap_text.set(snap)
+    snap_text.set(snapshot_counter)
     root.update()
     
+
 def export(*args):
+    '''
+    Opens a save as dialog to ask for a location and name. Then
+    averages the amount of samples into one data point and writes that to the csv
+    '''
     with open(filedialog.asksaveasfilename(defaultextension='csv'), mode='w', newline='') as f:
         writer = csv.writer(f)
         writer.writerow([col1, col2, col3])
@@ -150,6 +188,27 @@ def export(*args):
                 writer.writerow([x, avg1, avg2])
                 counter = samples
 
+def measure(*args):
+    '''
+    Sets a counter that initiates the measurement.
+    '''
+    global angle, measure_counter
+    measure_counter = measurements
+    clear_data()
+    with Thorlabs.KinesisMotor(kinesis_serial_num, is_rack_system=True, scale="K10CR1") as stage:
+        angle.set(start_angle)
+        stage.move_to(start_angle)
+        stage.wait_move(start_angle)
+    
+
+def clear_data(*args):
+    '''
+    Clears all internal data lists.
+    '''
+    global list1, list2, list3
+    list1 = []
+    list2 = []
+    list3 = []
 # Creates a graph for the GUI.
 fig = plt.Figure(figsize=[9.4, 4.8])
 
@@ -296,11 +355,15 @@ ttk.Button(mainframe, text="Snapshot", command=snapshot).grid(
     column=6, row=1, sticky=W)
 ttk.Button(mainframe, text='Export', command=export).grid(
     column=6, row=2, sticky=W)
+ttk.Button(mainframe, text='Clear', command=clear_data).grid(
+    column=6, row=3, sticky=W)
+ttk.Button(mainframe, text='AutoMeasure', command=measure).grid(
+    column=6, row=4, sticky=W)
 # controls
 time_entry = Spinbox(mainframe, width=7, from_=0.1, to=5,
                      increment=.1, textvariable=timer_00)
 
-angle_entry = Spinbox(mainframe, width=7, from_=0, to=360, increment=1, textvariable=angle)
+angle_entry = Spinbox(mainframe, width=7, from_=-10, to=360, increment=1, textvariable=angle)
 angle_entry.grid(column=4, row=6, sticky=(W, E))
 time_entry.grid(column=2, row=6, sticky=(W, E))
 timer_00.set(1000)
